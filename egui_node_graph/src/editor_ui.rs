@@ -154,7 +154,7 @@ where
             click_on_background = true;
         } else if r.drag_started() {
             drag_started_on_background = true;
-        } else if r.drag_released() {
+        } else if r.drag_stopped() {
             drag_released_on_background = true;
         }
 
@@ -486,6 +486,7 @@ where
             Rect::from_min_size(*self.position + self.pan, Self::MAX_NODE_SIZE.into()),
             Layout::default(),
             self.node_id,
+            None,
         );
 
         Self::show_graph_node(self, &mut child_ui, user_state)
@@ -525,7 +526,7 @@ where
         inner_rect.max.x = inner_rect.max.x.max(inner_rect.min.x);
         inner_rect.max.y = inner_rect.max.y.max(inner_rect.min.y);
 
-        let mut child_ui = ui.child_ui(inner_rect, *ui.layout());
+        let mut child_ui = ui.child_ui(inner_rect, *ui.layout(), None);
 
         // Get interaction rect from memory, it may expand after the window response on resize.
         let interaction_rect = ui
@@ -556,12 +557,12 @@ where
                         .text_style(TextStyle::Button)
                         .color(text_color),
                 ));
-                responses.extend(
-                    self.graph[self.node_id]
-                        .user_data
-                        .top_bar_ui(ui, self.node_id, self.graph, user_state)
-                        .into_iter(),
-                );
+                responses.extend(self.graph[self.node_id].user_data.top_bar_ui(
+                    ui,
+                    self.node_id,
+                    self.graph,
+                    user_state,
+                ));
                 ui.add_space(8.0); // The size of the little cross icon
             });
             ui.add_space(margin.y);
@@ -640,12 +641,12 @@ where
                 output_port_heights.push((height_before + height_after) / 2.0);
             }
 
-            responses.extend(
-                self.graph[self.node_id]
-                    .user_data
-                    .bottom_ui(ui, self.node_id, self.graph, user_state)
-                    .into_iter(),
-            );
+            responses.extend(self.graph[self.node_id].user_data.bottom_ui(
+                ui,
+                self.node_id,
+                self.graph,
+                user_state,
+            ));
         });
 
         // Second pass, iterate again to draw the ports. This happens outside
@@ -812,6 +813,7 @@ where
                 stroke: Stroke::NONE,
                 fill_texture_id: TextureId::default(),
                 uv: Rect::ZERO,
+                blur_width: 0.0,
             });
 
             let body_rect = Rect::from_min_size(
@@ -825,6 +827,7 @@ where
                 stroke: Stroke::NONE,
                 fill_texture_id: TextureId::default(),
                 uv: Rect::ZERO,
+                blur_width: 0.0,
             });
 
             let bottom_body_rect = Rect::from_min_size(
@@ -838,6 +841,7 @@ where
                 stroke: Stroke::NONE,
                 fill_texture_id: TextureId::default(),
                 uv: Rect::ZERO,
+                blur_width: 0.0,
             });
 
             let node_rect = titlebar_rect.union(body_rect).union(bottom_body_rect);
@@ -849,6 +853,7 @@ where
                     stroke: Stroke::NONE,
                     fill_texture_id: TextureId::default(),
                     uv: Rect::ZERO,
+                    blur_width: 0.0,
                 })
             } else {
                 Shape::Noop
